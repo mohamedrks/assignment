@@ -23,7 +23,10 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
   @Override
   public List<Warehouse> listAllWarehousesUnits() {
-    return warehouseStore.getAll().stream().map(this::toWarehouseResponse).toList();
+    return warehouseStore.getAll().stream()
+        .filter(w -> w.archivedAt == null)
+        .map(this::toWarehouseResponse)
+        .toList();
   }
 
   @Override

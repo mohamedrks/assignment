@@ -12,9 +12,12 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
+import org.jboss.logging.Logger;
 
 @RequestScoped
 public class WarehouseResourceImpl implements WarehouseResource {
+
+  private static final Logger LOGGER = Logger.getLogger(WarehouseResourceImpl.class.getName());
 
   @Inject private WarehouseStore warehouseStore;
   @Inject private CreateWarehouseOperation createWarehouseOperation;
@@ -32,6 +35,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Override
   @Transactional
   public Warehouse createANewWarehouseUnit(@NotNull Warehouse data) {
+    LOGGER.infof("Creating warehouse with businessUnitCode=%s", data.getBusinessUnitCode());
     var warehouse = toDomainWarehouse(data);
     createWarehouseOperation.create(warehouse);
     return toWarehouseResponse(warehouse);
@@ -41,6 +45,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public Warehouse getAWarehouseUnitByID(String id) {
     var warehouse = warehouseStore.findByBusinessUnitCode(id);
     if (warehouse == null) {
+      LOGGER.warnf("Warehouse not found: %s", id);
       throw new WebApplicationException("Warehouse with id " + id + " does not exist.", 404);
     }
     return toWarehouseResponse(warehouse);
@@ -49,8 +54,10 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Override
   @Transactional
   public void archiveAWarehouseUnitByID(String id) {
+    LOGGER.infof("Archiving warehouse with businessUnitCode=%s", id);
     var warehouse = warehouseStore.findByBusinessUnitCode(id);
     if (warehouse == null) {
+      LOGGER.warnf("Warehouse not found for archiving: %s", id);
       throw new WebApplicationException("Warehouse with id " + id + " does not exist.", 404);
     }
     archiveWarehouseOperation.archive(warehouse);
@@ -60,6 +67,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Transactional
   public Warehouse replaceTheCurrentActiveWarehouse(
       String businessUnitCode, @NotNull Warehouse data) {
+    LOGGER.infof("Replacing warehouse with businessUnitCode=%s", businessUnitCode);
     var newWarehouse = toDomainWarehouse(data);
     newWarehouse.businessUnitCode = businessUnitCode;
     replaceWarehouseOperation.replace(newWarehouse);

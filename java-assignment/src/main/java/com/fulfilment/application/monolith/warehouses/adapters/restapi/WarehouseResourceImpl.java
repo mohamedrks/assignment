@@ -4,18 +4,33 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.ArchiveWareho
 import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
-import com.warehouse.api.WarehouseResource;
 import com.warehouse.api.beans.Warehouse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ResponseStatus;
 
+/**
+ * Implements the Warehouse REST API as defined in warehouse-openapi.yaml.
+ *
+ * <p>Note: does not implement the generated WarehouseResource interface because
+ * quarkus-openapi-generator-server 2.4.7 does not support emitting a non-200 status code on POST
+ * (upstream issue #670). All JAX-RS annotations mirror the OpenAPI spec exactly.
+ */
+@Path("/warehouse")
 @RequestScoped
-public class WarehouseResourceImpl implements WarehouseResource {
+public class WarehouseResourceImpl {
 
   private static final Logger LOGGER = Logger.getLogger(WarehouseResourceImpl.class.getName());
 
@@ -24,7 +39,8 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Inject private ReplaceWarehouseOperation replaceWarehouseOperation;
   @Inject private ArchiveWarehouseOperation archiveWarehouseOperation;
 
-  @Override
+  @GET
+  @Produces("application/json")
   public List<Warehouse> listAllWarehousesUnits() {
     return warehouseStore.getAll().stream()
         .filter(w -> w.archivedAt == null)
@@ -32,8 +48,11 @@ public class WarehouseResourceImpl implements WarehouseResource {
         .toList();
   }
 
-  @Override
+  @POST
+  @Produces("application/json")
+  @Consumes("application/json")
   @Transactional
+  @ResponseStatus(201)
   public Warehouse createANewWarehouseUnit(@NotNull Warehouse data) {
     LOGGER.infof("Creating warehouse with businessUnitCode=%s", data.getBusinessUnitCode());
     var warehouse = toDomainWarehouse(data);
@@ -41,8 +60,10 @@ public class WarehouseResourceImpl implements WarehouseResource {
     return toWarehouseResponse(warehouse);
   }
 
-  @Override
-  public Warehouse getAWarehouseUnitByID(String id) {
+  @Path("/{id}")
+  @GET
+  @Produces("application/json")
+  public Warehouse getAWarehouseUnitByID(@PathParam("id") String id) {
     var warehouse = warehouseStore.findWarehouseById(Long.parseLong(id));
     if (warehouse == null) {
       LOGGER.warnf("Warehouse not found: %s", id);
@@ -51,9 +72,10 @@ public class WarehouseResourceImpl implements WarehouseResource {
     return toWarehouseResponse(warehouse);
   }
 
-  @Override
+  @Path("/{id}")
+  @DELETE
   @Transactional
-  public void archiveAWarehouseUnitByID(String id) {
+  public void archiveAWarehouseUnitByID(@PathParam("id") String id) {
     LOGGER.infof("Archiving warehouse with id=%s", id);
     var warehouse = warehouseStore.findWarehouseById(Long.parseLong(id));
     if (warehouse == null) {
@@ -63,10 +85,13 @@ public class WarehouseResourceImpl implements WarehouseResource {
     archiveWarehouseOperation.archive(warehouse);
   }
 
-  @Override
+  @Path("/{businessUnitCode}/replacement")
+  @POST
+  @Produces("application/json")
+  @Consumes("application/json")
   @Transactional
   public Warehouse replaceTheCurrentActiveWarehouse(
-      String businessUnitCode, @NotNull Warehouse data) {
+      @PathParam("businessUnitCode") String businessUnitCode, @NotNull Warehouse data) {
     LOGGER.infof("Replacing warehouse with businessUnitCode=%s", businessUnitCode);
     var newWarehouse = toDomainWarehouse(data);
     newWarehouse.businessUnitCode = businessUnitCode;

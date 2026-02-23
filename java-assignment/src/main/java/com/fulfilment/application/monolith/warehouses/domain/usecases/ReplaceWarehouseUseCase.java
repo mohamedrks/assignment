@@ -1,11 +1,10 @@
 package com.fulfilment.application.monolith.warehouses.domain.usecases;
 
-import com.fulfilment.application.monolith.warehouses.domain.models.Location;
 import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
-import com.fulfilment.application.monolith.warehouses.domain.ports.LocationResolver;
 import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
 
@@ -13,31 +12,25 @@ import java.time.LocalDateTime;
 public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
   private final WarehouseStore warehouseStore;
-  private final LocationResolver locationResolver;
+  private final WarehouseValidator validator;
 
-  public ReplaceWarehouseUseCase(WarehouseStore warehouseStore, LocationResolver locationResolver) {
+  @Inject
+  public ReplaceWarehouseUseCase(WarehouseStore warehouseStore, WarehouseValidator validator) {
     this.warehouseStore = warehouseStore;
-    this.locationResolver = locationResolver;
+    this.validator = validator;
   }
 
   @Override
   public void replace(Warehouse newWarehouse) {
-    // Find the existing active warehouse by business unit code
     Warehouse existing = warehouseStore.findByBusinessUnitCode(newWarehouse.businessUnitCode);
     if (existing == null) {
       throw new WebApplicationException(
           "Warehouse with business unit code " + newWarehouse.businessUnitCode + " does not exist.", 404);
     }
-    if (existing.archivedAt != null) {
-      throw new WebApplicationException(
-          "Warehouse with business unit code " + newWarehouse.businessUnitCode + " is already archived.", 400);
-    }
 
-    // Validate new location exists
-    Location location = locationResolver.resolveByIdentifier(newWarehouse.location);
-    if (location == null) {
-      throw new WebApplicationException("Location " + newWarehouse.location + " does not exist.", 400);
-    }
+    validator.validateNotArchived(existing);
+
+    validator.validateLocationExists(newWarehouse.location);
 
     // New warehouse capacity must accommodate the existing warehouse's stock
     if (newWarehouse.capacity < existing.stock) {

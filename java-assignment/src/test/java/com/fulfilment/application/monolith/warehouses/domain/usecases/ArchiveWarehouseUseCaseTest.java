@@ -14,12 +14,14 @@ import static org.mockito.Mockito.*;
 public class ArchiveWarehouseUseCaseTest {
 
   private WarehouseStore warehouseStore;
+  private WarehouseValidator validator;
   private ArchiveWarehouseUseCase useCase;
 
   @BeforeEach
   void setUp() {
     warehouseStore = mock(WarehouseStore.class);
-    useCase = new ArchiveWarehouseUseCase(warehouseStore);
+    validator = mock(WarehouseValidator.class);
+    useCase = new ArchiveWarehouseUseCase(warehouseStore, validator);
   }
 
   @Test
@@ -33,6 +35,7 @@ public class ArchiveWarehouseUseCaseTest {
 
     // then
     assertNotNull(warehouse.archivedAt);
+    verify(validator).validateNotArchived(warehouse);
     verify(warehouseStore).update(warehouse);
   }
 
@@ -53,8 +56,9 @@ public class ArchiveWarehouseUseCaseTest {
   void shouldRejectArchivingAlreadyArchivedWarehouse() {
     // given
     Warehouse warehouse = buildActiveWarehouse("MWH.001");
-    warehouse.archivedAt = LocalDateTime.now().minusDays(1); // already archived
+    warehouse.archivedAt = LocalDateTime.now().minusDays(1);
     when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(warehouse);
+    doThrow(new WebApplicationException(400)).when(validator).validateNotArchived(warehouse);
 
     // when / then
     WebApplicationException ex = assertThrows(WebApplicationException.class,

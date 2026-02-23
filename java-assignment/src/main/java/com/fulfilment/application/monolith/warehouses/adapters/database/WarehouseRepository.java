@@ -38,16 +38,8 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   }
 
   @Override
-  public void remove(Warehouse warehouse) {
-    DbWarehouse dbWarehouse = this.find("businessUnitCode", warehouse.businessUnitCode).firstResult();
-    if (dbWarehouse != null) {
-      this.delete(dbWarehouse);
-    }
-  }
-
-  @Override
   public Warehouse findWarehouseById(Long id) {
-    DbWarehouse dbWarehouse = PanacheRepository.super.findById(id);
+    DbWarehouse dbWarehouse = this.find("id", id).firstResult();
     return dbWarehouse != null ? dbWarehouse.toWarehouse() : null;
   }
 

@@ -13,7 +13,7 @@ public interface WarehouseStore {
 
   void remove(Warehouse warehouse);
 
-  Warehouse findById(Long id);
+  Warehouse findWarehouseById(Long id);
 
   Warehouse findByBusinessUnitCode(String buCode);
 }

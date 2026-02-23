@@ -7,9 +7,12 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStor
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDateTime;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class CreateWarehouseUseCase implements CreateWarehouseOperation {
+
+  private static final Logger LOGGER = Logger.getLogger(CreateWarehouseUseCase.class.getName());
 
   private final WarehouseStore warehouseStore;
   private final WarehouseValidator validator;
@@ -22,6 +25,9 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
   @Override
   public void create(Warehouse warehouse) {
+    LOGGER.infof("Creating warehouse businessUnitCode=%s location=%s capacity=%d",
+        warehouse.businessUnitCode, warehouse.location, warehouse.capacity);
+
     validator.validateBusinessUnitCodeIsUnique(warehouse.businessUnitCode);
 
     Location location = validator.validateLocationExists(warehouse.location);
@@ -30,5 +36,6 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
     warehouse.createdAt = LocalDateTime.now();
     warehouseStore.create(warehouse);
+    LOGGER.infof("Warehouse created id=%s businessUnitCode=%s", warehouse.id, warehouse.businessUnitCode);
   }
 }

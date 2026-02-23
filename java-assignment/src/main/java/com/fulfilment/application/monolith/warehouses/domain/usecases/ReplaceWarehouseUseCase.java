@@ -7,9 +7,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import java.time.LocalDateTime;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
+
+  private static final Logger LOGGER = Logger.getLogger(ReplaceWarehouseUseCase.class.getName());
 
   private final WarehouseStore warehouseStore;
   private final WarehouseValidator validator;
@@ -22,8 +25,12 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
   @Override
   public void replace(Warehouse newWarehouse) {
+    LOGGER.infof("Replacing warehouse businessUnitCode=%s with location=%s capacity=%d",
+        newWarehouse.businessUnitCode, newWarehouse.location, newWarehouse.capacity);
+
     Warehouse existing = warehouseStore.findByBusinessUnitCode(newWarehouse.businessUnitCode);
     if (existing == null) {
+      LOGGER.warnf("Warehouse not found for replacement: businessUnitCode=%s", newWarehouse.businessUnitCode);
       throw new WebApplicationException(
           "Warehouse with business unit code " + newWarehouse.businessUnitCode + " does not exist.", 404);
     }
@@ -47,9 +54,11 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
     // Archive the old warehouse
     existing.archivedAt = LocalDateTime.now();
     warehouseStore.update(existing);
+    LOGGER.infof("Archived old warehouse id=%s businessUnitCode=%s", existing.id, existing.businessUnitCode);
 
     // Create the new warehouse
     newWarehouse.createdAt = LocalDateTime.now();
     warehouseStore.create(newWarehouse);
+    LOGGER.infof("Created replacement warehouse id=%s businessUnitCode=%s", newWarehouse.id, newWarehouse.businessUnitCode);
   }
 }

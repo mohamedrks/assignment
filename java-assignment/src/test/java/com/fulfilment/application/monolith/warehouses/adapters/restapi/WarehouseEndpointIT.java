@@ -43,8 +43,8 @@ public class WarehouseEndpointIT {
             containsString("AMSTERDAM-001"),
             containsString("TILBURG-001"));
 
-    // Archive MWH.001 (businessUnitCode, located at ZWOLLE-001):
-    given().when().delete(path + "/MWH.001").then().statusCode(204);
+    // Archive warehouse with db id=1 (MWH.001, located at ZWOLLE-001):
+    given().when().delete(path + "/1").then().statusCode(204);
 
     // List all, ZWOLLE-001 should be missing now (archived warehouses not listed):
     given()

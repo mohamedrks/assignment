@@ -43,7 +43,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
   @Override
   public Warehouse getAWarehouseUnitByID(String id) {
-    var warehouse = warehouseStore.findByBusinessUnitCode(id);
+    var warehouse = warehouseStore.findById(Long.parseLong(id));
     if (warehouse == null) {
       LOGGER.warnf("Warehouse not found: %s", id);
       throw new WebApplicationException("Warehouse with id " + id + " does not exist.", 404);
@@ -54,8 +54,8 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Override
   @Transactional
   public void archiveAWarehouseUnitByID(String id) {
-    LOGGER.infof("Archiving warehouse with businessUnitCode=%s", id);
-    var warehouse = warehouseStore.findByBusinessUnitCode(id);
+    LOGGER.infof("Archiving warehouse with id=%s", id);
+    var warehouse = warehouseStore.findById(Long.parseLong(id));
     if (warehouse == null) {
       LOGGER.warnf("Warehouse not found for archiving: %s", id);
       throw new WebApplicationException("Warehouse with id " + id + " does not exist.", 404);
@@ -87,6 +87,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   private Warehouse toWarehouseResponse(
       com.fulfilment.application.monolith.warehouses.domain.models.Warehouse warehouse) {
     var response = new Warehouse();
+    response.setId(warehouse.id != null ? String.valueOf(warehouse.id) : null);
     response.setBusinessUnitCode(warehouse.businessUnitCode);
     response.setLocation(warehouse.location);
     response.setCapacity(warehouse.capacity);

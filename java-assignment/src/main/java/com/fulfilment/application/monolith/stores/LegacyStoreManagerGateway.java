@@ -9,13 +9,8 @@ import java.nio.file.Path;
 @ApplicationScoped
 public class LegacyStoreManagerGateway {
 
-  public void createStoreOnLegacySystem(
-      @Observes(during = TransactionPhase.AFTER_SUCCESS) StoreCreatedEvent event) {
-    writeToFile(event.store);
-  }
-
-  public void updateStoreOnLegacySystem(
-      @Observes(during = TransactionPhase.AFTER_SUCCESS) StoreUpdatedEvent event) {
+  public void onStoreEvent(
+      @Observes(during = TransactionPhase.AFTER_SUCCESS) StoreEvent event) {
     writeToFile(event.store);
   }
 

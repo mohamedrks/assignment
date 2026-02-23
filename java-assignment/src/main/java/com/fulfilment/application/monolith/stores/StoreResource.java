@@ -30,8 +30,7 @@ public class StoreResource {
 
   @Inject LegacyStoreManagerGateway legacyStoreManagerGateway;
 
-  @Inject Event<StoreCreatedEvent> storeCreatedEvent;
-  @Inject Event<StoreUpdatedEvent> storeUpdatedEvent;
+  @Inject Event<StoreEvent> storeEvent;
 
   private static final Logger LOGGER = Logger.getLogger(StoreResource.class.getName());
 
@@ -59,7 +58,7 @@ public class StoreResource {
 
     store.persist();
 
-    storeCreatedEvent.fire(new StoreCreatedEvent(store));
+    storeEvent.fire(new StoreEvent(store, StoreEvent.Type.CREATED));
 
     return Response.ok(store).status(201).build();
   }
@@ -81,7 +80,7 @@ public class StoreResource {
     entity.name = updatedStore.name;
     entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
 
-    storeUpdatedEvent.fire(new StoreUpdatedEvent(entity));
+    storeEvent.fire(new StoreEvent(entity, StoreEvent.Type.UPDATED));
 
     return entity;
   }
@@ -108,7 +107,7 @@ public class StoreResource {
       entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
     }
 
-    storeUpdatedEvent.fire(new StoreUpdatedEvent(entity));
+    storeEvent.fire(new StoreEvent(entity, StoreEvent.Type.UPDATED));
 
     return entity;
   }

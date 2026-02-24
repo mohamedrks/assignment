@@ -102,6 +102,8 @@
                     <excludes>
                         <!-- Exclude OpenAPI-generated code from coverage analysis -->
                         <exclude>com/warehouse/api/**</exclude>
+                        <!-- Exclude Panache repository adapter — requires a live DB, covered by integration tests -->
+                        <exclude>com/fulfilment/application/monolith/warehouses/adapters/database/WarehouseRepository.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -110,6 +112,15 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <!-- Exclude OpenAPI-generated code and Mockito/ByteBuddy dynamic proxies -->
+                                <exclude>com/warehouse/api/**</exclude>
+                                <exclude>**/*MockitoMock*</exclude>
+                                <exclude>**/*$auxiliary$*</exclude>
+                                <exclude>**/*$HibernateProxy$*</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>

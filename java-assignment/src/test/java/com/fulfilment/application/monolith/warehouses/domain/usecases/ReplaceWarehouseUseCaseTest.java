@@ -1,5 +1,6 @@
 package com.fulfilment.application.monolith.warehouses.domain.usecases;
 
+import com.fulfilment.application.monolith.warehouses.domain.models.Location;
 import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import jakarta.ws.rs.WebApplicationException;
@@ -29,8 +30,10 @@ public class ReplaceWarehouseUseCaseTest {
     // given
     Warehouse existing = buildActiveWarehouse("MWH.001", "ZWOLLE-001", 100, 10);
     Warehouse newWarehouse = buildActiveWarehouse("MWH.001", "ZWOLLE-001", 50, 10);
+    Location location = new Location("ZWOLLE-001", 2, 80);
 
     when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(existing);
+    when(validator.validateLocationExists("ZWOLLE-001")).thenReturn(location);
 
     // when
     useCase.replace(newWarehouse);
@@ -40,8 +43,47 @@ public class ReplaceWarehouseUseCaseTest {
     assertNotNull(newWarehouse.createdAt);
     verify(validator).validateNotArchived(existing);
     verify(validator).validateLocationExists("ZWOLLE-001");
+    verify(validator).validateLocationCapacity("ZWOLLE-001", location, 50);
     verify(warehouseStore).update(existing);
     verify(warehouseStore).create(newWarehouse);
+  }
+
+  @Test
+  void shouldRejectWhenNewLocationExceedsCapacity() {
+    // given
+    Warehouse existing = buildActiveWarehouse("MWH.001", "ZWOLLE-001", 40, 10);
+    Warehouse newWarehouse = buildActiveWarehouse("MWH.001", "ZWOLLE-001", 40, 10);
+    Location location = new Location("ZWOLLE-001", 1, 40);
+
+    when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(existing);
+    when(validator.validateLocationExists("ZWOLLE-001")).thenReturn(location);
+    doThrow(new WebApplicationException(400))
+        .when(validator).validateLocationCapacity("ZWOLLE-001", location, 40);
+
+    // when / then
+    WebApplicationException ex = assertThrows(WebApplicationException.class,
+        () -> useCase.replace(newWarehouse));
+    assertEquals(400, ex.getResponse().getStatus());
+    verify(warehouseStore, never()).create(any());
+  }
+
+  @Test
+  void shouldRejectWhenNewLocationHasNoAvailableSlots() {
+    // given
+    Warehouse existing = buildActiveWarehouse("MWH.001", "TILBURG-001", 40, 5);
+    Warehouse newWarehouse = buildActiveWarehouse("MWH.001", "TILBURG-001", 30, 5);
+    Location location = new Location("TILBURG-001", 1, 40);
+
+    when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(existing);
+    when(validator.validateLocationExists("TILBURG-001")).thenReturn(location);
+    doThrow(new WebApplicationException(400))
+        .when(validator).validateLocationCapacity("TILBURG-001", location, 30);
+
+    // when / then
+    WebApplicationException ex = assertThrows(WebApplicationException.class,
+        () -> useCase.replace(newWarehouse));
+    assertEquals(400, ex.getResponse().getStatus());
+    verify(warehouseStore, never()).create(any());
   }
 
   @Test

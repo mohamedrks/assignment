@@ -1,5 +1,6 @@
 package com.fulfilment.application.monolith.warehouses.domain.usecases;
 
+import com.fulfilment.application.monolith.warehouses.domain.models.Location;
 import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
@@ -37,7 +38,8 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
     validator.validateNotArchived(existing);
 
-    validator.validateLocationExists(newWarehouse.location);
+    Location location = validator.validateLocationExists(newWarehouse.location);
+    validator.validateLocationCapacity(newWarehouse.location, location, newWarehouse.capacity);
 
     // New warehouse capacity must accommodate the existing warehouse's stock
     if (newWarehouse.capacity < existing.stock) {

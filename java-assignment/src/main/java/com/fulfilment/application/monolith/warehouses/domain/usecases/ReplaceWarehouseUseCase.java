@@ -39,7 +39,6 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
     validator.validateNotArchived(existing);
 
     Location location = validator.validateLocationExists(newWarehouse.location);
-    validator.validateLocationCapacity(newWarehouse.location, location, newWarehouse.capacity);
 
     // New warehouse capacity must accommodate the existing warehouse's stock
     if (newWarehouse.capacity < existing.stock) {
@@ -53,10 +52,13 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
           "New warehouse stock must match the existing warehouse stock of " + existing.stock + ".", 400);
     }
 
-    // Archive the old warehouse
+    // Archive the old warehouse first so its capacity is excluded from the location capacity check
     existing.archivedAt = LocalDateTime.now();
     warehouseStore.update(existing);
     LOGGER.infof("Archived old warehouse id=%s businessUnitCode=%s", existing.id, existing.businessUnitCode);
+
+    // Now validate capacity against the remaining active warehouses (old one is already archived)
+    validator.validateLocationCapacity(newWarehouse.location, location, newWarehouse.capacity);
 
     // Create the new warehouse
     newWarehouse.createdAt = LocalDateTime.now();

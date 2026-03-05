@@ -64,6 +64,8 @@ public class ReplaceWarehouseUseCaseTest {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
         () -> useCase.replace(newWarehouse));
     assertEquals(400, ex.getResponse().getStatus());
+    // old warehouse is archived before capacity check, but new one must not be created
+    verify(warehouseStore).update(existing);
     verify(warehouseStore, never()).create(any());
   }
 
@@ -83,6 +85,8 @@ public class ReplaceWarehouseUseCaseTest {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
         () -> useCase.replace(newWarehouse));
     assertEquals(400, ex.getResponse().getStatus());
+    // old warehouse is archived before capacity check, but new one must not be created
+    verify(warehouseStore).update(existing);
     verify(warehouseStore, never()).create(any());
   }
 
